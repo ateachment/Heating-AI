@@ -9,8 +9,9 @@ import datetime
 from datetime import date
 import os  
 
-SEPERATOR = " "
-SPECIAL_FILENAME = "specialDay.txt"
+SEPERATOR = ","
+SPECIAL_FILENAME = "specialDay.csv"
+DATA_FILENAME = "numResidentsAtHome.csv"
 
 
 def main():
@@ -45,11 +46,11 @@ def main():
     wlanAccessPoint = Fritzbox(settings.IP_ADDRESS, settings.PASSWORD) 
     numResidentsAtHome = wlanAccessPoint.getNumberActiveMacs(settings.MACS)
 
-    # number residents at home, even or odd week, number of weekday, number of checking intervals
-    print(numResidentsAtHome, hday, dt.isocalendar()[1] % 2, dt.weekday(), ((dt.hour * 60 + dt.minute) / settings.CHECK_INTERVAL)/144)
+    # datetime, number residents at home, holiday (1)
+    print(dt.replace(microsecond=0), numResidentsAtHome, hday)
 
-    with open(os.path.join(os.path.dirname(__file__),'data', "data.txt"),"a") as file:
-        file.write(str(numResidentsAtHome) + SEPERATOR + str(hday) + SEPERATOR + str(dt.isocalendar()[1] % 2) + SEPERATOR + str(dt.weekday()) + SEPERATOR + str(((dt.hour * 60 + dt.minute) / settings.CHECK_INTERVAL)/144) + "\n") 
+    with open(os.path.join(os.path.dirname(__file__),'data', DATA_FILENAME),"a") as file:
+        file.write(str(dt.replace(microsecond=0)) + SEPERATOR + str(numResidentsAtHome) + SEPERATOR + str(hday) + "\n") 
         file.close() 
 
 if __name__ == '__main__':
