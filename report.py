@@ -13,8 +13,11 @@ SEPERATOR = ","
 SPECIAL_FILENAME = "specialDay.csv"
 DATA_FILENAME = "numResidentsAtHome.csv"
 
-
-def main():
+'''
+Reports date and time with number of residents and if day is public holiday in file
+returns present number of residents 
+'''
+def report():
     dt = datetime.datetime.now()
 
     specialDay = "2020-01-01 0"  # in the past with standard day = 0
@@ -47,11 +50,13 @@ def main():
     numResidentsAtHome = wlanAccessPoint.getNumberActiveMacs(settings.MACS)
 
     # datetime, number residents at home, holiday (1)
-    print(dt.replace(microsecond=0), numResidentsAtHome, hday)
+    # print(dt.replace(microsecond=0), numResidentsAtHome, hday)
 
     with open(os.path.join(os.path.dirname(__file__),'data', DATA_FILENAME),"a") as file:
         file.write(str(dt.replace(microsecond=0)) + SEPERATOR + str(numResidentsAtHome) + SEPERATOR + str(hday) + "\n") 
         file.close() 
+    
+    return numResidentsAtHome
 
 if __name__ == '__main__':
-    main()
+    report()

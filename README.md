@@ -8,7 +8,9 @@ The training data of the AI are the presences of the persons of the last weeks. 
 The following data is collected:
 
 2020-12-02 20:00:38,4,0
+
 2020-12-02 20:10:38,3,0
+
 ...
 
 At these times 4 or 3 residents are at home, whereby it is a normal weekday (0) and no public holiday (1).
