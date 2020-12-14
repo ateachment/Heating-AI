@@ -29,9 +29,6 @@ class Thermostat:
 
 
         # print('Device: ' + self.__thermostat.type)
-        # print('Current temperature: '+ str(self.__thermostat.get_temp()) + 'C')
-        # print('Set temperature: ' + str(self.__thermostat.set_temp(22.0)) )
-        
 
         # read the complete status :
         # data = self.__thermostat.get_full_status()
@@ -54,7 +51,7 @@ class Thermostat:
 
 
     def programAutoMode(self, weekday):
-        self.set_mode()
+        self.set_mode() #loop mode '1234567'
         # set times/temps for auto mode
         # weekday = [{'start_hour':6, 'start_minute':00, 'temp': 22 },{'start_hour':7, 'start_minute':00, 'temp': 16 },{'start_hour':12, 'start_minute':30, 'temp': 22 },{'start_hour':14, 'start_minute':00, 'temp': 20 },{'start_hour':15, 'start_minute':00, 'temp': 22 },{'start_hour':22, 'start_minute':00, 'temp': 16 }]
         weekend = [{'start_hour':6, 'start_minute':00, 'temp': 22 },{'start_hour':22, 'start_minute':00, 'temp': 16 }] # not needed because of loop mode '1234567'
