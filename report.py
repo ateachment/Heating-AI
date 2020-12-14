@@ -1,5 +1,6 @@
 import settings
 from apis.Fritzbox import Fritzbox
+from apis.Thermostat import Thermostat
 
 
 from apis import holiday
@@ -51,9 +52,13 @@ def report():
 
     # datetime, number residents at home, holiday (1)
     # print(dt.replace(microsecond=0), numResidentsAtHome, hday)
+    
+    # get actual temperature for control purposes
+    thermostat1 = Thermostat()
+    actualTemp = thermostat1.getActualTemp()
 
     with open(os.path.join(os.path.dirname(__file__),'data', DATA_FILENAME),"a") as file:
-        file.write(str(dt.replace(microsecond=0)) + SEPERATOR + str(numResidentsAtHome) + SEPERATOR + str(hday) + "\n") 
+        file.write(str(dt.replace(microsecond=0)) + SEPERATOR + str(numResidentsAtHome) + SEPERATOR + str(hday) +  SEPERATOR + str(actualTemp) + "\n") 
         file.close() 
     
     return numResidentsAtHome

@@ -8,7 +8,6 @@ def controlHeating():
         thermostat1.temperature(22.0)
 
 
-
     
 if __name__ == '__main__':
     controlHeating()
