@@ -223,7 +223,7 @@ for i in range(36):
   predicted_residentsAtHome.append(prediction[0][i][0])
   if predicted_residentsAtHome[i] < settings.targetTemps[0]:
     targetTemp.append(targetTemps[0])
-  elif predicted_residentsAtHome[i] >= settings.targetTemps[0] and predicted_residentsAtHome[i] < settings.targetTemps[0]:
+  elif predicted_residentsAtHome[i] >= settings.targetTemps[0] and predicted_residentsAtHome[i] < settings.targetTemps[1]:
     targetTemp.append(targetTemps[1])
   else:
     targetTemp.append(targetTemps[2])
