@@ -114,7 +114,7 @@ class WindowGenerator():
     return self.make_dataset(self.train_df)
 
 
-MAX_EPOCHS = 20
+MAX_EPOCHS = settings.MAX_EPOCHS
 
 def compile_and_fit(model, window, patience=2):
   model.compile(loss=tf.losses.MeanSquaredError(),
@@ -214,16 +214,16 @@ prediction_tensor=make_dataset(prediction_df)
 prediction = multi_dense_model.predict(prediction_tensor)
 # print(prediction)
 
-targetTemps = [18, 20, 22]
+targetTemps = settings.targetTemps
 targetTemp = []
 predicted_residentsAtHome = []
 times = []
 for i in range(36):
   times.append(startTime.strftime("%H:%M")) 
   predicted_residentsAtHome.append(prediction[0][i][0])
-  if predicted_residentsAtHome[i] < .5:
+  if predicted_residentsAtHome[i] < settings.targetTemps[0]:
     targetTemp.append(targetTemps[0])
-  elif predicted_residentsAtHome[i] >= 0.5 and predicted_residentsAtHome[i] < 1.0:
+  elif predicted_residentsAtHome[i] >= settings.targetTemps[0] and predicted_residentsAtHome[i] < settings.targetTemps[0]:
     targetTemp.append(targetTemps[1])
   else:
     targetTemp.append(targetTemps[2])

@@ -1,1 +1,0 @@
-sh python3 ../report.py
