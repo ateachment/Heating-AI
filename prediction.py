@@ -221,13 +221,13 @@ times = []
 for i in range(36):
   times.append(startTime.strftime("%H:%M")) 
   predicted_residentsAtHome.append(prediction[0][i][0])
-  if predicted_residentsAtHome[i] < settings.targetTemps[0]:
+  if predicted_residentsAtHome[i] < settings.switchingThresholds[0]:
     targetTemp.append(targetTemps[0])
-  elif predicted_residentsAtHome[i] >= settings.targetTemps[0] and predicted_residentsAtHome[i] < settings.targetTemps[1]:
+  elif predicted_residentsAtHome[i] >= settings.switchingThresholds[0] and predicted_residentsAtHome[i] < settings.switchingThresholds[1]:
     targetTemp.append(targetTemps[1])
   else:
     targetTemp.append(targetTemps[2])
-  # print(times[i], predicted_residentsAtHome[i], targetTemp[i]) # print(startTime, prediction[0][i][0])
+  print(times[i], predicted_residentsAtHome[i], targetTemp[i]) # print(startTime, prediction[0][i][0])
   startTime+=datetime.timedelta(minutes=30)
 
 
