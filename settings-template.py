@@ -11,6 +11,3 @@ CHECK_INTERVAL=10
 
 # identifying special days i.e. holidays
 COUNTRY_CODE ="XX"
-
-# Mac addresses of the residents' portable devices, which are always taken along
-macs=["00:00:00:00:00:00","11:11:11:11:11:11"]

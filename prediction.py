@@ -15,9 +15,9 @@ residentsAtHome = pd.read_csv(settings.DATA_URL, sep=",")
 # slice [start:stop:step], starting from index 0 take every 3th record -> every half an hour
 residentsAtHome = residentsAtHome[0::3]
 
-residentsAtHome.columns = ['datetime', 'numResidents', 'holiday']
+residentsAtHome.columns = ['datetime', 'numResidents', 'holiday','actualTemp']
 
-
+residentsAtHome.pop('actualTemp')
 
 # extract real number of residents from 6:00
 startTime = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + datetime.timedelta(hours=6, minutes=0)
