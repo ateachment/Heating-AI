@@ -227,7 +227,7 @@ for i in range(36):
     targetTemp.append(targetTemps[1])
   else:
     targetTemp.append(targetTemps[2])
-  print(times[i], predicted_residentsAtHome[i], targetTemp[i]) # print(startTime, prediction[0][i][0])
+  # print(times[i], predicted_residentsAtHome[i], targetTemp[i]) # print(startTime, prediction[0][i][0])
   startTime+=datetime.timedelta(minutes=30)
 
 
