@@ -39,6 +39,14 @@ class Thermostat:
     def getActualTemp(self):
         return self.__thermostat.get_temp()
 
+
+    # Abuse of osv (Maximum floor temperature -> normally turns off underfloor heating to protect parquet adhesive).
+    # Is not in use here. But memory is needed in thermostat to store current manually set temperature.
+    def getManualTemp(self):
+        jsonLoad = json.loads(json.dumps(self.getFullStatus()))
+        manualTemp = jsonLoad['osv']                    # misuse of osv
+        return manualTemp
+
     def set_mode(self, auto_mode: int = 0, loop_mode: int = 2):
         # Change controller mode
         # auto_mode = 1 for auto (scheduled/timed) mode, 0 for manual mode.
@@ -61,4 +69,4 @@ class Thermostat:
 
 if __name__ == '__main__':
     thermostat1 = Thermostat()
-    print(thermostat1.getFullStatus())
+    print(thermostat1.getManualTemp())
