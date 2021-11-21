@@ -8,7 +8,7 @@ class Thermostat:
     def __init__(self): 
         # discover thermostat in WLAN
 
-        device = broadlink.hysen(('192.168.178.24',80),'780F77D422D7',0x4ead)  
+        device = broadlink.hysen(('192.168.178.9',80),'780F77D422D7',0x4ead)  
         device.auth()
         self.__thermostat = device
 

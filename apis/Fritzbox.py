@@ -1,4 +1,6 @@
 # Source: https://fritzconnection.readthedocs.io/en/1.3.4/sources/library.html#fritzwlan
+# Note: Note: After Fritzbox OS update you often have to update Fritzconnection as well
+# pip install fritzconnection==version
 
 import itertools
 
