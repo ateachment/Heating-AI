@@ -13,7 +13,10 @@ CHECK_INTERVAL=10
 COUNTRY_CODE ="XX"
 
 # download url of data
-DATA_URL = "https://YourDataSource.csv"
+# from local file system
+DATA_URL = "data/numResidentsAtHome.csv" 
+# or public url
+# DATA_URL = "https://YourDataSource.csv"
 # number of maximum training epochs
 MAX_EPOCHS = 20
 

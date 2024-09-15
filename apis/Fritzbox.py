@@ -2,31 +2,25 @@
 # Note: Note: After Fritzbox OS update you often have to update Fritzconnection as well
 # pip install fritzconnection==version
 
-import itertools
-
-from fritzconnection.lib.fritzwlan import FritzWLAN
-from fritzconnection.core.exceptions import FritzServiceError
+from fritzconnection.lib.fritzhosts import FritzHosts
 
 class Fritzbox:
     def __init__(self, ipAddress, password): 
         # instanciate FritzWLAN just once for reusage
-        self.__fwlan = FritzWLAN(address=ipAddress, password=password)
+        self.__fh = FritzHosts(address=ipAddress, password=password)
 
     def getActiveMacs(self):
-        """
-        Gets a FritzWLAN instance and returns a list of mac addresses
-        from the active devices
-        """
         active_macs = list()
-        # iterate over all wlans:
-        for n in itertools.count(1):
-            self.__fwlan.service = n
-            try:
-                hostsInfo = self.__fwlan.get_hosts_info()
-            except FritzServiceError:
-                break
-            else:
-                active_macs.extend(entry['mac'] for entry in hostsInfo)
+        hosts = self.__fh.get_hosts_info()
+        for index, host in enumerate(hosts, start=1):
+            status = 'active' if host['status'] else  '-'
+            ip = host['ip'] if host['ip'] else '-'
+            mac = host['mac'] if host['mac'] else '-'
+            hn = host['name']
+            print(f'{index:>3}: {ip:<16} {hn:<28} {mac:<17}   {status}')
+            if(status == 'active'):
+                active_macs.append(host['mac'])
+
         return active_macs
 
 

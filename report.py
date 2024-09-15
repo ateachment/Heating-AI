@@ -61,6 +61,8 @@ def report():
         file.write(str(dt.replace(microsecond=0)) + SEPERATOR + str(numResidentsAtHome) + SEPERATOR + str(hday) +  SEPERATOR + str(actualTemp) + "\n") 
         file.close() 
     
+    if __name__ == '__main__':
+        print("numResidentsAtHome=" + str(numResidentsAtHome))
     return numResidentsAtHome
 
 if __name__ == '__main__':
