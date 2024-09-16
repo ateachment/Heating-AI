@@ -9,7 +9,7 @@ MACS=["00:00:00:00:00:00","11:11:11:11:11:11"]
 # interval of the check if someone is at home in minutes
 CHECK_INTERVAL=10
 
-# identifying special days i.e. holidays
+# identifying special days i.e. holidays 
 COUNTRY_CODE ="XX"
 
 # download url of data

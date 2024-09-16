@@ -13,5 +13,5 @@ def getHoliday(year: str, germanCountryCode: str):
     for holiday in data:         # iterate
         print (data[holiday]['datum'])
 
-
-getHoliday("2020", "HE")
+if __name__ == '__main__':
+    getHoliday("2024", "HE")  # test for Hessian in Germany

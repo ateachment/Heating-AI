@@ -10,7 +10,15 @@ import tensorflow as tf
 
 import os
 
-residentsAtHome = pd.read_csv(settings.DATA_URL, sep=",")
+# data filenames
+SEPARATOR = ","
+PREDICTION_FILENAME = "prediction.csv"
+
+DATA_FILENAME = "numResidentsAtHome.csv"
+
+
+
+residentsAtHome = pd.read_csv(settings.DATA_URL, sep=SEPARATOR)
 
 # slice [start:stop:step], starting from index 0 take every 3th record -> every half an hour
 residentsAtHome = residentsAtHome[0::3]
@@ -163,7 +171,7 @@ for n in range(36):
   prediction_data.append(data_point)
   startTimestamp_s += 1800
 
-#print(prediction_data)
+# print(prediction_data)
 
 prediction_df = pd.DataFrame(prediction_data, columns=['numResidents', 'holiday', 'Day sin', 'Day cos', 'Week sin', 'Week cos', 'Two weeks sin', 'Two weeks cos'])
 
@@ -201,15 +209,10 @@ def make_dataset(data):
       sequence_stride=1,
       shuffle=True,
       batch_size=32,)
-
   ds = ds.map(split_window)
-
   return ds
 
 prediction_tensor=make_dataset(prediction_df)
-
-
-
 
 prediction = multi_dense_model.predict(prediction_tensor)
 # print(prediction)
@@ -230,4 +233,8 @@ for i in range(36):
   # print(times[i], predicted_residentsAtHome[i], targetTemp[i]) # print(startTime, prediction[0][i][0])
   startTime+=datetime.timedelta(minutes=30)
 
+with open(os.path.join(os.path.dirname(__file__),'data', settings.PREDICTION_FILENAME),"w") as file:
+  for i in range(36):    
+    file.write(times[i] + settings.SEPARATOR + str(predicted_residentsAtHome[i]) + settings.SEPARATOR + str(targetTemp[i]) + "\n") 
+  file.close() 
 
