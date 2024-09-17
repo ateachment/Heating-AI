@@ -1,24 +1,12 @@
 import settings
 
 import datetime
-import math
-
-
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-
 import os
 
-# data filenames
-SEPARATOR = ","
-PREDICTION_FILENAME = "prediction.csv"
-
-DATA_FILENAME = "numResidentsAtHome.csv"
-
-
-
-residentsAtHome = pd.read_csv(settings.DATA_URL, sep=SEPARATOR)
+residentsAtHome = pd.read_csv(settings.DATA_URL, sep=settings.SEPARATOR)
 
 # slice [start:stop:step], starting from index 0 take every 3th record -> every half an hour
 residentsAtHome = residentsAtHome[0::3]
