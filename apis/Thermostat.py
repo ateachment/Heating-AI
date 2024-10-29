@@ -1,4 +1,4 @@
-import json
+import datetime
 import broadlink  # pip install broadlink - https://github.com/mjg59/python-broadlink
 
 # instructions refer to
@@ -11,42 +11,19 @@ class Thermostat:
         device = broadlink.hysen(('192.168.178.9',80),'780F77D422D7',0x4ead)  
         device.auth()
         self.__thermostat = device
-
-        ''' # does not work anymore with python 3.8 ???
-        devices = broadlink.discover(timeout=5)
-        print("Found " + str(len(devices)) + " broadlink devices")
-        if(len(devices) > 0):
-            devices[0].auth()
-            self.__thermostat = devices[0]
-        '''
-    
-    def getFullStatus(self):
-        return self.__thermostat.get_full_status()
+        self.__full_status = self.__thermostat.get_full_status()
 
     def temperature(self, temp):
-    
-        # print(self.__thermostat.get_type()) # Hysen heating controller
-
-
-        # print('Device: ' + self.__thermostat.type)
-
-        # read the complete status :
-        # data = self.__thermostat.get_full_status()
-
         self.__thermostat.set_temp(temp)
-        return self.__thermostat.get_temp()
 
     def getActualTemp(self):
-        return self.__thermostat.get_temp()
-
+        return self.__full_status['room_temp']
 
     # Abuse of osv (Maximum floor temperature -> normally turns off underfloor heating to protect parquet adhesive).
     # Is not in use here. But memory is needed in thermostat to store current manually set temperature.
     def getManualTemp(self):
-        jsonLoad = json.loads(json.dumps(self.getFullStatus()))
-        manualTemp = jsonLoad['osv']                    # misuse of osv
-        return manualTemp
-
+        return self.__full_status['osv']                    # misuse of osv
+    
     def set_mode(self, auto_mode: int = 0, loop_mode: int = 2):
         # Change controller mode
         # auto_mode = 1 for auto (scheduled/timed) mode, 0 for manual mode.
@@ -57,7 +34,6 @@ class Thermostat:
         # loop_mode = 2 ("1234567") means every day (including Saturday and Sunday) follows the "weekday" schedule
         self.__thermostat.set_mode(auto_mode, loop_mode)
 
-
     def programAutoMode(self, weekday):
         self.set_mode() #loop mode '1234567'
         # set times/temps for auto mode
@@ -66,7 +42,19 @@ class Thermostat:
         # print('Test switch to auto mode: ' + str(self.__thermostat.switch_to_auto()) )
         self.__thermostat.set_schedule(weekday, weekend)
 
+    def correctTime(self):
+        now = datetime.datetime.now()
+        dayofweek = now.isoweekday()               # number of weekday: monday = 1 .. sunday = 7
+        time = now.time()
+        hour = time.hour
+        minute = time.minute
+        second = time.second
+        if hour != self.__full_status['hour'] or minute != self.__full_status['min'] or second != self.__full_status['sec'] or dayofweek != self.__full_status['dayofweek']:
+            self.__thermostat.set_time(hour, minute, second, dayofweek)
+            print("time corrected")
+
 
 if __name__ == '__main__':
     thermostat1 = Thermostat()
-    print(thermostat1.getManualTemp())
+    #print(thermostat1.getManualTemp())
+    thermostat1.correctTime()
