@@ -17,11 +17,14 @@ COUNTRY_CODE ="XX"
 DATA_URL = "data/numResidentsAtHome.csv" 
 # or public url
 # DATA_URL = "https://YourDataSource.csv"
-# number of maximum training epochs
-MAX_EPOCHS = 20
 
  # dependend on 2 switching thresholds
 targetTemps = [18, 20, 22]
 # 2 switching thresholds of probability of number residents at home
 switchingThresholds = [0.5, 1.0] 
 
+# data filenames (no need to change)
+SEPARATOR = ","
+PREDICTION_FILENAME = "prediction.csv"
+SPECIAL_FILENAME = "specialDay.csv"
+DATA_FILENAME = "numResidentsAtHome.csv"

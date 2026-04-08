@@ -1,228 +1,131 @@
-import settings
-
-import datetime
-import numpy as np
 import pandas as pd
-import tensorflow as tf
+import numpy as np
+from sklearn.model_selection import train_test_split # pip install scikit-learn
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.multioutput import MultiOutputRegressor
+from sklearn.ensemble import RandomForestRegressor
+
+import settings
 import os
+import datetime
 
-residentsAtHome = pd.read_csv(settings.DATA_URL, sep=settings.SEPARATOR)
+df = pd.read_csv(settings.DATA_URL,
+                 names=['timestamp','residents','holiday','temperature'],
+                 parse_dates=['timestamp'])
+df = df.set_index('timestamp')
+#print(df.head())
 
-# slice [start:stop:step], starting from index 0 take every 3th record -> every half an hour
-residentsAtHome = residentsAtHome[0::3]
+# bring data to half hour intervals
+half_hour = df.resample('30min').last()
 
-residentsAtHome.columns = ['datetime', 'numResidents', 'holiday','actualTemp']
+# Zustände fortschreiben
+half_hour[['residents','holiday','temperature']] = \
+    half_hour[['residents','holiday','temperature']].ffill()  # fill falls zu dem Zeitpunkt ein Log fehlt
 
-residentsAtHome.pop('actualTemp')
-
-# extract real number of residents from 6:00
-startTime = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + datetime.timedelta(hours=6, minutes=0)
-# print(startTime)
-
-real_residentsAtHome = residentsAtHome.loc[(residentsAtHome['datetime'] >= startTime.strftime('%Y-%m-%d %H:%M:%S'))]['numResidents'] 
-# print(real_residentsAtHome)
-
-date_time = pd.to_datetime(residentsAtHome.pop('datetime'), format='%Y-%m-%d %H:%M:%S')
-timestamp_s = date_time.map(datetime.datetime.timestamp)
-
-day = 24*60*60
-week = 7*day
-twoWeek = 2*week
-
-residentsAtHome['Day sin'] = np.sin(timestamp_s * (2 * np.pi / day))
-residentsAtHome['Day cos'] = np.cos(timestamp_s * (2 * np.pi / day))
-
-residentsAtHome['Week sin'] = np.sin(timestamp_s * (2 * np.pi / week))
-residentsAtHome['Week cos'] = np.cos(timestamp_s * (2 * np.pi / week))
-
-residentsAtHome['Two weeks sin'] = np.sin(timestamp_s * (2 * np.pi / twoWeek))
-residentsAtHome['Two weeks cos'] = np.cos(timestamp_s * (2 * np.pi / twoWeek))
+#print(half_hour.head())
 
 
-column_indices = {name: i for i, name in enumerate(residentsAtHome.columns)}
+# prepare data for training (feature engineering: 
+# 06:00–22:00 o'clock, yesterdays evening 18–22 mean, weekday, month, week parity, holiday, target: number of residents at home in the next 33 half hours)
 
-n = len(residentsAtHome)
-train_residentsAtHome = residentsAtHome[0:int(n*1)]
+days = []
 
-num_features = residentsAtHome.shape[1]
+for day, group in half_hour.groupby(half_hour.index.date):
+    day_slice = group.between_time('06:00','22:00')
 
-class WindowGenerator():
-  def __init__(self, input_width, label_width, shift,
-               train_df=train_residentsAtHome,
-               label_columns=None):
-    # Store the raw data.
-    self.train_df = train_df
+    # gestriger Abend 18–22 Uhr
+    yesterday = pd.Timestamp(day) - pd.Timedelta(days=1)
+    yesterday_slice = half_hour.loc[
+        (half_hour.index.date == yesterday.date())
+    ].between_time('18:00','22:00')
 
-    # Work out the label column indices.
-    self.label_columns = label_columns
-    if label_columns is not None:
-      self.label_columns_indices = {name: i for i, name in
-                                    enumerate(label_columns)}
-    self.column_indices = {name: i for i, name in
-                           enumerate(train_df.columns)}
+    if len(day_slice) == 33 and len(yesterday_slice) > 0:
+        target = day_slice['residents'].values
 
-    # Work out the window parameters.
-    self.input_width = input_width
-    self.label_width = label_width
-    self.shift = shift
+        yesterday_evening_state = yesterday_slice['residents'].mean()
 
-    self.total_window_size = input_width + shift
+        days.append({
+            'date': day,
+            'weekday': day_slice.index[0].weekday(),
+            'month': day_slice.index[0].month,
+            'week_parity': day_slice.index[0].week % 2,
+            'holiday': int(day_slice['holiday'].iloc[0]),
+            'yesterday_evening_state': yesterday_evening_state,
+            'target': target
+        })
 
-    self.input_slice = slice(0, input_width)
-    self.input_indices = np.arange(self.total_window_size)[self.input_slice]
+daily = pd.DataFrame(days)
+daily = pd.DataFrame(days)
+#print(daily.head())
 
-    self.label_start = self.total_window_size - self.label_width
-    self.labels_slice = slice(self.label_start, None)
-    self.label_indices = np.arange(self.total_window_size)[self.labels_slice]
+# Features and target matrix
+X = daily[['weekday','month','week_parity','holiday','yesterday_evening_state']]
+Y = np.vstack(daily['target'].values)
 
-  def split_window(self, features):
-    inputs = features[:, self.input_slice, :]
-    labels = features[:, self.labels_slice, :]
-    if self.label_columns is not None:
-      labels = tf.stack(
-          [labels[:, :, self.column_indices[name]] for name in self.label_columns],
-          axis=-1)
+# Train model with ALL available data (not just 80% for real prediction)
+model = MultiOutputRegressor(RandomForestRegressor())
+model.fit(X, Y)
 
-    # Slicing doesn't preserve static shape information, so set the shapes
-    # manually. This way the `tf.data.Datasets` are easier to inspect.
-    inputs.set_shape([None, self.input_width, None])
-    labels.set_shape([None, self.label_width, None])
+# For real prediction: predict for the NEXT day (today) based on yesterday's evening data
+# Assume the last day in our dataset is "yesterday" and we want to predict "today"
 
-    return inputs, labels
+# Get yesterday's date (last day in dataset)
+yesterday_date = daily['date'].iloc[-1]
 
-  def make_dataset(self, data):
-    data = np.array(data, dtype=np.float32)
-    ds = tf.keras.preprocessing.timeseries_dataset_from_array(
-        data=data,
-        targets=None,
-        sequence_length=self.total_window_size,
-        sequence_stride=1,
-        shuffle=True,
-        batch_size=32,)
+# Calculate features for today
+today = yesterday_date + pd.Timedelta(days=1)
 
-    ds = ds.map(self.split_window)
+# Check if we have data for today and get holiday information from it
+today_data = df[df.index.date == today]
+holiday_today = int(today_data['holiday'].iloc[0]) if len(today_data) > 0 else 0
 
-    return ds
+yesterday = today - pd.Timedelta(days=1)
+yesterday_key = yesterday.date() if hasattr(yesterday, 'date') else yesterday
+yesterday_evening_state = df.loc[df.index.date == yesterday_key].between_time('18:00','22:00')['residents'].mean()
 
+today_features = {
+    'weekday': today.weekday(),
+    'month': today.month,
+    'week_parity': today.isocalendar().week % 2,
+    'holiday': holiday_today,  # Get holiday info from today's data (3rd column)
+    'yesterday_evening_state': yesterday_evening_state
+}
 
-  @property
-  def train(self):
-    return self.make_dataset(self.train_df)
+# Make prediction for today
+today_X = pd.DataFrame([today_features])
+prediction_today = model.predict(today_X)[0]  # Get the prediction array
 
-
-MAX_EPOCHS = settings.MAX_EPOCHS
-
-def compile_and_fit(model, window, patience=2):
-  model.compile(loss=tf.losses.MeanSquaredError(),
-                optimizer=tf.optimizers.Adam(),
-                metrics=[tf.metrics.MeanAbsoluteError()])
-
-  history = model.fit(window.train, epochs=MAX_EPOCHS, verbose=0)
-  return history
+print(f"Prediction for {today.strftime('%Y-%m-%d')} (today):")
+print(f"Based on yesterday evening average of residents (18:00–22:00): {today_features['yesterday_evening_state']:.2f} residents")
 
 
-INPUT_WIDTH = 36
-OUT_STEPS = 36
-multi_window = WindowGenerator(input_width=INPUT_WIDTH, label_width=OUT_STEPS, shift=OUT_STEPS)
+# Model trained with all available data for real predictions
+print(f"Model trained with {len(X)} days of historical data")
+print(f"Last available day: {yesterday_date.strftime('%Y-%m-%d')}")
 
 
-multi_dense_model = tf.keras.Sequential([
-    # Take the last time step.
-    # Shape [batch, time, features] => [batch, 1, features]
-    tf.keras.layers.Lambda(lambda x: x[:, -1:, :]),
-    # Shape => [batch, 1, dense_units]
-    tf.keras.layers.Dense(512, activation='relu'),
-    # Shape => [batch, out_steps*features]
-    tf.keras.layers.Dense(OUT_STEPS*num_features, kernel_initializer=tf.initializers.zeros),
-    # Shape => [batch, out_steps, features]
-    tf.keras.layers.Reshape([OUT_STEPS, num_features])
-])
-
-history = compile_and_fit(multi_dense_model, multi_window)
-
-
-startTimestamp_s = startTime.timestamp()
-#print(startTimestamp_s)
-
-prediction_data=[]
-for n in range(36):
-  data_point = [
-    0,
-    0,
-    np.sin(startTimestamp_s * (2 * np.pi / day)),
-    np.cos(startTimestamp_s * (2 * np.pi / day)),
-    np.sin(startTimestamp_s * (2 * np.pi / week)),
-    np.cos(startTimestamp_s * (2 * np.pi / week)),
-    np.sin(startTimestamp_s * (2 * np.pi / twoWeek)),
-    np.cos(startTimestamp_s * (2 * np.pi / twoWeek))
-  ]
-  prediction_data.append(data_point)
-  startTimestamp_s += 1800
-
-# print(prediction_data)
-
-prediction_df = pd.DataFrame(prediction_data, columns=['numResidents', 'holiday', 'Day sin', 'Day cos', 'Week sin', 'Week cos', 'Two weeks sin', 'Two weeks cos'])
-
-def split_window(features):
-  inputs = features[:, slice(0, INPUT_WIDTH), :]
-  labels = features[:, slice(0, 36), :]
-  
-  if prediction_df.columns is not None:
-
-    # Work out the label column indices.
-    label_columns = ["numResidents"]
-    if label_columns is not None:
-      label_columns_indices = {name: i for i, name in
-                                    enumerate(label_columns)}
-    column_indices = {name: i for i, name in
-                           enumerate(prediction_df.columns)}
-
-    labels = tf.stack(
-        [labels[:, :, column_indices[name]] for name in label_columns],
-        axis=-1)
-
-  # Slicing doesn't preserve static shape information, so set the shapes
-  # manually. This way the `tf.data.Datasets` are easier to inspect.
-  inputs.set_shape([None, INPUT_WIDTH, None])
-  labels.set_shape([None, 36, None])
-
-  return inputs, labels
-
-def make_dataset(data):
-  data = np.array(data, dtype=np.float32)
-  ds = tf.keras.preprocessing.timeseries_dataset_from_array(
-      data=data,
-      targets=None,
-      sequence_length=36,
-      sequence_stride=1,
-      shuffle=True,
-      batch_size=32,)
-  ds = ds.map(split_window)
-  return ds
-
-prediction_tensor=make_dataset(prediction_df)
-
-prediction = multi_dense_model.predict(prediction_tensor)
-# print(prediction)
-
+# predict for the following day (the current day at 6 AM, data available until 5:30 AM)
 targetTemps = settings.targetTemps
 targetTemp = []
 predicted_residentsAtHome = []
 times = []
-for i in range(36):
-  times.append(startTime.strftime("%H:%M")) 
-  predicted_residentsAtHome.append(prediction[0][i][0])
+
+# Use today's prediction
+startTime = pd.Timestamp("06:00").time()
+
+for i in range(len(prediction_today)):
+  times.append(startTime.strftime("%H:%M"))
+  predicted_residentsAtHome.append(prediction_today[i])
   if predicted_residentsAtHome[i] < settings.switchingThresholds[0]:
     targetTemp.append(targetTemps[0])
   elif predicted_residentsAtHome[i] >= settings.switchingThresholds[0] and predicted_residentsAtHome[i] < settings.switchingThresholds[1]:
     targetTemp.append(targetTemps[1])
   else:
     targetTemp.append(targetTemps[2])
-  # print(times[i], predicted_residentsAtHome[i], targetTemp[i]) # print(startTime, prediction[0][i][0])
-  startTime+=datetime.timedelta(minutes=30)
+  startTime = (pd.Timestamp.combine(pd.Timestamp.today(), startTime) + pd.Timedelta(minutes=30)).time()
 
 with open(os.path.join(os.path.dirname(__file__),'data', settings.PREDICTION_FILENAME),"w") as file:
-  for i in range(36):    
+  for i in range(len(predicted_residentsAtHome)):    
     file.write(times[i] + settings.SEPARATOR + str(predicted_residentsAtHome[i]) + settings.SEPARATOR + str(targetTemp[i]) + "\n") 
   file.close() 
 
