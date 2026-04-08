@@ -14,7 +14,7 @@ COUNTRY_CODE ="XX"
 
 # download url of data
 # from local file system
-DATA_URL = "data/numResidentsAtHome.csv" 
+DATA_URL = "data/YourDataSource.csv" 
 # or public url
 # DATA_URL = "https://YourDataSource.csv"
 
@@ -27,4 +27,4 @@ switchingThresholds = [0.5, 1.0]
 SEPARATOR = ","
 PREDICTION_FILENAME = "prediction.csv"
 SPECIAL_FILENAME = "specialDay.csv"
-DATA_FILENAME = "numResidentsAtHome.csv"
+DATA_FILENAME = "YourDataSource.csv"
