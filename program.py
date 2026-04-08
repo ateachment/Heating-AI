@@ -10,7 +10,7 @@ now = datetime.datetime.now()
 if now.minute < 30:
     next_half_hour = now.replace(minute=30, second=0, microsecond=0)
 else:
-    next_half_hour = (now + datetime.timedelta(hours=1)).replace(minute=30, second=0, microsecond=0)
+    next_half_hour = (now + datetime.timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
 print("Next half hour:", next_half_hour)
 
 
