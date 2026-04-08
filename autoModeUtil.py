@@ -5,15 +5,16 @@ import os
 import csv
 
 # read file
-def readPrediction():    
+def readPrediction(next_half_hour):    
     times = list()
     targetTemps = list()
     with open(os.path.join(os.path.dirname(__file__),'data', settings.PREDICTION_FILENAME), newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=settings.SEPARATOR)
         for row in reader:
-            times.append(row[0])
-            targetTemps.append(row[2])
-    #print(times, targetTemps)
+            if row[0] >= next_half_hour.strftime("%H:%M"):
+                times.append(row[0])
+                targetTemps.append(row[2])
+    print("times, targetTemps:", times, targetTemps)
     return times, targetTemps
         
 def timePeriod(time, targetTemp):
